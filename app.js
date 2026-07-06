@@ -219,29 +219,58 @@
 
   var target = app.scrollLeft, current = target, animating = false;
   function frame() {
-    current += (target - current) * 0.14;
-    if (Math.abs(target - current) < 0.5) { current = target; app.scrollLeft = current; animating = false; return; }
+    current += (target - current) * 0.16;
+    if (Math.abs(target - current) < 0.4) { current = target; app.scrollLeft = current; animating = false; return; }
     app.scrollLeft = current; requestAnimationFrame(frame);
   }
   function kick() { if (!animating) { animating = true; requestAnimationFrame(frame); } }
   function glideTo(x) { target = clamp(x); if (REDUCED) { app.scrollLeft = target; } else kick(); }
 
+  // deltaMode normalisieren (Zeilen/Seiten → Pixel), damit alle Eingabegeräte gleich fließen
+  function pxDelta(e) {
+    if (e.deltaMode === 1) return e.deltaY * 16;               // Zeilen
+    if (e.deltaMode === 2) return e.deltaY * app.clientWidth;  // Seiten
+    return e.deltaY;                                           // Pixel
+  }
   app.addEventListener("wheel", function (e) {
     if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;  // horizontales Trackpad frei lassen
     e.preventDefault();
-    if (REDUCED) { app.scrollLeft = clamp(app.scrollLeft + e.deltaY); return; }
-    target = clamp((animating ? target : app.scrollLeft) + e.deltaY * 1.1);
+    var dy = pxDelta(e);
+    if (REDUCED) { app.scrollLeft = clamp(app.scrollLeft + dy); return; }
+    target = clamp((animating ? target : app.scrollLeft) + dy);
     kick();
   }, { passive: false });
 
   /* --- Sichtbares aktualisieren (Fortschritt + Parallax) --------------- */
+  // Auto-Fit: Text so groß wie möglich, aber nur dort verkleinern, wo ein
+  // Block sonst über die Folie hinausliefe (--fs-Multiplikator).
+  var fitBlocks = Array.prototype.slice.call(document.querySelectorAll(".station__inner, .epoch-divider__inner"));
+  function fitOne(inner) {
+    inner.style.setProperty("--fs", 1);
+    var vh = window.innerHeight, fs = 1, guard = 0;
+    while (guard++ < 10) {
+      var r = inner.getBoundingClientRect();
+      if (r.bottom <= vh - 46 && r.top >= 8) break;   // Abstand zur Timeline unten wahren
+      fs -= 0.05; if (fs < 0.62) { fs = 0.62; inner.style.setProperty("--fs", fs); break; }
+      inner.style.setProperty("--fs", fs);
+    }
+  }
+  function fitAll() { for (var i = 0; i < fitBlocks.length; i++) fitOne(fitBlocks[i]); }
+  fitAll();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll); // Webfont-Metriken
+
+  // Panel-Mitten einmalig messen (keine Layout-Reads pro Scroll-Frame → kein Jank)
+  var centers = [];
+  function measure() { centers = emblems.map(function (e) { var p = e.parentNode; return p.offsetLeft + p.offsetWidth / 2; }); }
+  measure();
+
   var ticking = false;
   function updateVisual() {
     var mx = maxX();
     progress.style.width = (mx > 0 ? app.scrollLeft / mx * 100 : 0) + "%";
     var vc = app.scrollLeft + app.clientWidth / 2, w = app.clientWidth;
     for (var i = 0; i < emblems.length; i++) {
-      var p = emblems[i].parentNode, pc = p.offsetLeft + p.offsetWidth / 2, d = pc - vc;
+      var d = centers[i] - vc;
       if (Math.abs(d) < w * 1.5) emblems[i].style.transform = "translateX(" + (d * -0.05) + "px)";
     }
   }
@@ -249,6 +278,7 @@
     if (!animating) { target = current = app.scrollLeft; }
     if (!ticking) { ticking = true; requestAnimationFrame(function () { updateVisual(); ticking = false; }); }
   }, { passive: true });
+  window.addEventListener("resize", function () { fitAll(); measure(); updateVisual(); });
   updateVisual();
 
   /* --- Reveal + aktive Folie (HUD, Knoten, Timeline) ------------------- */
