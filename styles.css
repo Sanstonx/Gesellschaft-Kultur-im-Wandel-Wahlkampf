@@ -1,0 +1,367 @@
+/* =========================================================================
+   Wahlkampf im Wandel — Styles
+   Scrollytelling: jede Epoche bekommt ihr eigenes Farb-, Typo- und Flair-Set.
+   Semantische Tokens (--bg, --surface, --accent, --ink, --muted) werden pro
+   [data-epoche] gesetzt; die Stationen erben sie.
+   ========================================================================= */
+
+/* ----- Reset / Basis ---------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: #0a0a0a;
+  color: #eee;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+img { max-width: 100%; }
+:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
+
+/* ----- Fortschritts-Balken oben ---------------------------------------- */
+.progress {
+  position: fixed; top: 0; left: 0; height: 4px; width: 0%;
+  background: currentColor; color: #d9a441;
+  z-index: 100; transition: width .1s linear, color .6s ease;
+  box-shadow: 0 0 12px currentColor;
+}
+
+/* ----- Epochen-HUD (oben rechts) --------------------------------------- */
+.hud {
+  position: fixed; top: 16px; right: 18px; z-index: 90;
+  text-align: right; pointer-events: none;
+  font-family: "Inter", system-ui, sans-serif;
+  mix-blend-mode: difference; color: #fff;
+  transition: opacity .4s ease;
+}
+.hud__epoche { font-size: .72rem; letter-spacing: .28em; text-transform: uppercase; opacity: .8; }
+.hud__name { font-size: .95rem; font-weight: 600; max-width: 42vw; }
+.hud__zeit { font-size: .72rem; opacity: .7; letter-spacing: .05em; }
+@media (max-width: 720px){ .hud{ display:none; } }
+
+/* ----- Timeline-Navigation (links) ------------------------------------- */
+.timeline {
+  position: fixed; left: 14px; top: 50%; transform: translateY(-50%);
+  z-index: 90; display: flex; flex-direction: column; gap: 6px;
+}
+.timeline__dot {
+  --dot: rgba(255,255,255,.35);
+  width: 11px; height: 11px; border: 0; padding: 0; cursor: pointer;
+  border-radius: 50%; background: transparent;
+  box-shadow: inset 0 0 0 2px var(--dot); transition: all .25s ease;
+  position: relative;
+}
+.timeline__dot:hover { box-shadow: inset 0 0 0 2px #fff; transform: scale(1.25); }
+.timeline__dot[aria-current="true"] { background: var(--dot); box-shadow: inset 0 0 0 2px #fff, 0 0 8px var(--dot); }
+.timeline__dot::after {
+  content: attr(data-label);
+  position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+  white-space: nowrap; font-size: .7rem; font-family: "Inter", sans-serif;
+  background: rgba(0,0,0,.82); color: #fff; padding: 3px 8px; border-radius: 4px;
+  opacity: 0; pointer-events: none; transition: opacity .2s ease;
+}
+.timeline__dot:hover::after { opacity: 1; }
+@media (max-width: 900px){ .timeline{ display:none; } }
+
+/* ----- Reveal-Animation ------------------------------------------------ */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s ease, transform .8s cubic-bezier(.2,.7,.2,1); }
+.reveal.is-in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce){ .reveal{ opacity:1; transform:none; transition:none; } }
+
+/* =========================================================================
+   HERO
+   ========================================================================= */
+.hero {
+  min-height: 100vh; display: grid; place-items: center; text-align: center;
+  padding: 8vh 6vw; position: relative; overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 0%, #241a10 0%, #12100c 55%, #0a0a0a 100%);
+  color: #f2e8d5;
+}
+.hero__inner { position: relative; z-index: 2; max-width: 960px; }
+.hero__kicker {
+  font-family: "Inter", sans-serif; letter-spacing: .42em; text-transform: uppercase;
+  font-size: .8rem; color: #c9b28a; margin-bottom: 1.6rem;
+}
+.hero__title {
+  font-family: "Playfair Display", serif; font-weight: 800;
+  font-size: clamp(2.8rem, 9vw, 7rem); line-height: .98; margin: 0;
+  background: linear-gradient(180deg,#fff 0%, #d9a441 120%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero__sub {
+  font-family: "EB Garamond", serif; font-style: italic;
+  font-size: clamp(1.2rem, 3vw, 2rem); color: #e6d9b8; margin-top: 1rem;
+}
+.hero__lead {
+  max-width: 640px; margin: 2.2rem auto 0; font-family: "EB Garamond", serif;
+  font-size: clamp(1.05rem,2vw,1.25rem); color: #cdbf9f;
+}
+.hero__scroll {
+  margin-top: 3rem; font-family: "Inter", sans-serif; font-size: .78rem;
+  letter-spacing: .28em; text-transform: uppercase; color: #c9b28a;
+  animation: bob 2s ease-in-out infinite;
+}
+@keyframes bob { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(8px);} }
+/* schwebende Wort-Partikel im Hero-Hintergrund */
+.hero__words { position:absolute; inset:0; z-index:1; overflow:hidden; opacity:.14; }
+.hero__words span {
+  position:absolute; font-family:"Playfair Display",serif; white-space:nowrap;
+  color:#d9a441; font-size: clamp(1rem,3vw,2.4rem); animation: drift 26s linear infinite;
+}
+@keyframes drift { from{ transform: translateX(6vw);} to{ transform: translateX(-6vw);} }
+@media (prefers-reduced-motion: reduce){ .hero__scroll,.hero__words span{ animation:none; } }
+
+/* =========================================================================
+   EPOCHEN-TRENNER
+   ========================================================================= */
+.epoch-divider {
+  min-height: 62vh; display: grid; place-items: center; text-align: center;
+  padding: 12vh 6vw; position: relative; overflow: hidden;
+  background: var(--bg); color: var(--ink);
+}
+.epoch-divider__num {
+  font-family: var(--font-display); font-size: clamp(4rem, 16vw, 12rem);
+  line-height: 1; color: var(--accent); opacity: .28; letter-spacing: .05em;
+}
+.epoch-divider__name {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(1.8rem, 5vw, 3.4rem); margin: .2rem 0 .4rem; max-width: 20ch;
+}
+.epoch-divider__zeit {
+  font-family: "Inter", sans-serif; letter-spacing: .3em; text-transform: uppercase;
+  font-size: .85rem; color: var(--accent); font-weight: 600;
+}
+.epoch-divider__flair {
+  margin-top: 1.4rem; font-family: var(--font-body); font-style: italic;
+  color: var(--muted); font-size: .95rem; max-width: 40ch;
+}
+
+/* =========================================================================
+   STATIONEN
+   ========================================================================= */
+.station {
+  min-height: 100vh; display: grid; align-items: center;
+  padding: 12vh 6vw; position: relative; overflow: hidden;
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body);
+  transition: background .8s ease;
+}
+.station__inner {
+  position: relative; z-index: 3; max-width: 760px; margin: 0 auto;
+  width: 100%;
+}
+.station__year {
+  font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(3.4rem, 12vw, 8rem); line-height: .9; color: var(--accent);
+  letter-spacing: -.01em; margin-bottom: .3rem;
+  display: inline-block;
+}
+.station__eyebrow {
+  font-family: "Inter", sans-serif; font-size: .72rem; letter-spacing: .28em;
+  text-transform: uppercase; color: var(--muted); font-weight: 600;
+  margin-bottom: 1.1rem;
+}
+.station__title {
+  font-family: var(--font-display); font-weight: 700;
+  font-size: clamp(1.6rem, 4.4vw, 2.9rem); line-height: 1.1; margin: 0 0 1.1rem;
+}
+.station__text {
+  font-size: clamp(1.05rem, 2.1vw, 1.3rem); max-width: 62ch;
+  color: var(--ink);
+}
+.station__text .accent { color: var(--accent); font-weight: 600; font-style: normal; }
+.station__rule {
+  width: 64px; height: 3px; background: var(--accent); border: 0; margin: 1.4rem 0;
+  opacity: .8;
+}
+
+/* Große transparente Hintergrund-Ziffer der Station-Nummer */
+.station__ghost {
+  position: absolute; right: 4vw; bottom: 2vh; z-index: 1;
+  font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(9rem, 34vw, 26rem); line-height: 1; color: var(--accent);
+  opacity: .07; pointer-events: none; user-select: none;
+}
+
+/* =========================================================================
+   FLAIR-OVERLAYS (pro Epoche unterschiedlich, rein per CSS)
+   ========================================================================= */
+.flair { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+
+/* Papierkorn / Textur (I, III) */
+.flair--grain::before {
+  content:""; position:absolute; inset:0; opacity:.5; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+}
+/* Vignette (III, V) */
+.flair--vignette::after {
+  content:""; position:absolute; inset:0;
+  background: radial-gradient(120% 100% at 50% 45%, transparent 55%, rgba(0,0,0,.55) 100%);
+}
+/* Scanlines (V, VI) */
+.flair--scanlines::before {
+  content:""; position:absolute; inset:0; opacity:.35; mix-blend-mode: overlay;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,.12) 0 1px, transparent 1px 3px);
+}
+/* CRT-Glühen an den Rändern (VI) */
+.flair--crt::after {
+  content:""; position:absolute; inset:0;
+  background: radial-gradient(120% 100% at 50% 50%, transparent 60%, rgba(0,0,0,.6) 100%);
+}
+/* Deco-Linien (IV) */
+.flair--deco::before {
+  content:""; position:absolute; inset:22px;
+  border: 2px solid var(--accent); opacity:.35;
+  clip-path: polygon(0 18px,18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px));
+}
+.flair--deco::after {
+  content:""; position:absolute; left:50%; top:0; transform:translateX(-50%);
+  width:1px; height:100%; background:linear-gradient(var(--accent),transparent 40%,transparent 60%,var(--accent));
+  opacity:.18;
+}
+/* Neon / Glitch (VIII) */
+.flair--neon::before {
+  content:""; position:absolute; inset:0; opacity:.5;
+  background:
+    radial-gradient(40% 30% at 15% 20%, rgba(29,161,242,.25), transparent 70%),
+    radial-gradient(40% 30% at 85% 75%, rgba(224,36,94,.22), transparent 70%),
+    radial-gradient(35% 30% at 70% 15%, rgba(0,229,168,.18), transparent 70%);
+}
+/* Web-1.0-Verlaufsglanz (VII) */
+.flair--gloss::before {
+  content:""; position:absolute; inset:0; opacity:.6;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.6), transparent 30%),
+    radial-gradient(60% 40% at 50% 0%, rgba(45,127,249,.18), transparent 70%);
+}
+/* Fahnen-Streifen / Woodtype (II) */
+.flair--flags::before {
+  content:""; position:absolute; inset:0; opacity:.1;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 8px, transparent 8px 44px);
+}
+
+/* =========================================================================
+   EPOCHEN-THEMES
+   Zuweisung der semantischen Tokens + Fonts je Epoche.
+   ========================================================================= */
+
+/* I — Gründungszeit: Pergament, Serifen */
+[data-epoche="I"]{
+  --bg: #f2e8d5; --surface:#e9dcc0; --accent:#6b4f2a; --ink:#3a2a17; --muted:#8a6d43;
+  --font-display:"Playfair Display", serif; --font-body:"EB Garamond", serif;
+}
+/* II — Massendemokratie: Woodtype, Fahnen */
+[data-epoche="II"]{
+  --bg: #e8dcc0; --surface:#dccca6; --accent:#b23a2e; --ink:#26201a; --muted:#1f3a5f;
+  --font-display:"Zilla Slab", serif; --font-body:"Zilla Slab", serif;
+}
+/* III — Foto & Presse: Sepia, Vignette */
+[data-epoche="III"]{
+  --bg: #d8cbb3; --surface:#c9baa0; --accent:#5f4a2f; --ink:#2b241b; --muted:#7a6a4c;
+  --font-display:"Old Standard TT", serif; --font-body:"Old Standard TT", serif;
+}
+/* IV — Radio: dunkel, Gold, Deco */
+[data-epoche="IV"]{
+  --bg: #101418; --surface:#171c22; --accent:#c8a24a; --ink:#e6d9b8; --muted:#a98f5e;
+  --font-display:"Poiret One", "Jost", sans-serif; --font-body:"Jost", sans-serif;
+}
+/* V — Fernsehen: Schwarzweiß, Scanlines, roter Akzent */
+[data-epoche="V"]{
+  --bg: #1a1a1a; --surface:#242424; --accent:#c0392b; --ink:#e8e8e8; --muted:#9a9a9a;
+  --font-display:"Jost", sans-serif; --font-body:"Jost", sans-serif;
+}
+/* VI — Berater & Kabel-TV: News-Chyron, CRT */
+[data-epoche="VI"]{
+  --bg: #0b1e3f; --surface:#12294f; --accent:#e01e5a; --ink:#f3f4f8; --muted:#f2c94c;
+  --font-display:"Oswald", sans-serif; --font-body:"Inter", sans-serif;
+}
+/* VII — Internet 1.0: hellblau, Glanz */
+[data-epoche="VII"]{
+  --bg: #eaf2fb; --surface:#dbe9fb; --accent:#2d7ff9; --ink:#0a2540; --muted:#4a6b93;
+  --font-display: Verdana, Geneva, "Inter", sans-serif; --font-body: Verdana, Geneva, sans-serif;
+}
+/* VIII — Social Media: Dark-Mode, Neon */
+[data-epoche="VIII"]{
+  --bg: #0d0d12; --surface:#15151d; --accent:#1da1f2; --ink:#e9e9ee; --muted:#00e5a8;
+  --font-display:"Inter", sans-serif; --font-body:"Inter", sans-serif;
+}
+
+/* News-Chyron-Bauchbinde für Epoche VI */
+[data-epoche="VI"] .station__eyebrow {
+  background: var(--accent); color:#fff; display:inline-block;
+  padding: 4px 12px; letter-spacing:.18em;
+}
+[data-epoche="VI"] .station__title { text-transform: uppercase; letter-spacing:.01em; }
+
+/* Web-1.0-„Button“-Optik für Jahr in Epoche VII */
+[data-epoche="VII"] .station__year {
+  background: linear-gradient(180deg,#7fb3ff,#2d7ff9);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  filter: drop-shadow(0 2px 0 rgba(10,37,64,.25));
+}
+
+/* Neon-Glow für Titel in Epoche VIII */
+[data-epoche="VIII"] .station__year { text-shadow: 0 0 24px rgba(29,161,242,.5); }
+[data-epoche="VIII"] .station__title { text-shadow: 0 0 18px rgba(0,229,168,.18); }
+
+/* Gold-Glühen Radio-Epoche */
+[data-epoche="IV"] .station__year { text-shadow: 0 0 26px rgba(200,162,74,.35); }
+
+/* =========================================================================
+   FAZIT
+   ========================================================================= */
+.fazit {
+  min-height: 100vh; display: grid; place-items: center; text-align: left;
+  padding: 14vh 6vw; position: relative; overflow: hidden;
+  background: linear-gradient(160deg,#0d0d12 0%, #131a2e 60%, #0d0d12 100%);
+  color: #e9e9ee;
+}
+.fazit__inner { max-width: 860px; width: 100%; position: relative; z-index: 2; }
+.fazit__kicker {
+  font-family:"Inter",sans-serif; letter-spacing:.35em; text-transform:uppercase;
+  font-size:.78rem; color:#00e5a8; margin-bottom:1rem;
+}
+.fazit__title {
+  font-family:"Inter",sans-serif; font-weight:800;
+  font-size: clamp(1.8rem,5vw,3.2rem); line-height:1.12; margin:0 0 2rem;
+  background: linear-gradient(90deg,#1da1f2,#00e5a8);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.fazit__list { list-style:none; margin:0; padding:0; display:grid; gap:1.1rem; }
+.fazit__item {
+  padding:1.2rem 1.4rem; border-left:3px solid #1da1f2;
+  background: rgba(255,255,255,.04); border-radius: 0 10px 10px 0;
+  font-size: clamp(1rem,2vw,1.2rem);
+}
+.fazit__item .accent { color:#00e5a8; font-weight:600; }
+.fazit__frage {
+  margin-top: 3rem; font-family:"Playfair Display",serif; font-style:italic;
+  font-size: clamp(1.6rem,4.5vw,2.8rem); text-align:center;
+  color:#fff; text-shadow:0 0 30px rgba(29,161,242,.3);
+}
+
+/* =========================================================================
+   FOOTER / Hinweis
+   ========================================================================= */
+.footer {
+  padding: 3rem 6vw 4rem; text-align:center; background:#0a0a0a; color:#8a8a8a;
+  font-family:"Inter",sans-serif; font-size:.82rem; line-height:1.7;
+}
+.footer a { color:#c9b28a; }
+.footer__note { max-width: 620px; margin: 0 auto; opacity:.8; }
+.footer__meta { margin-top:1rem; opacity:.5; font-size:.75rem; }
+
+/* =========================================================================
+   Responsiv
+   ========================================================================= */
+@media (max-width: 640px){
+  .station, .epoch-divider { padding: 10vh 7vw; }
+  .station__ghost { display:none; }
+}
