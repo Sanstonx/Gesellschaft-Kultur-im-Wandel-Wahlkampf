@@ -134,14 +134,17 @@
     sec.setAttribute("data-hud-name", ep.name); sec.setAttribute("data-hud-epoche", st.epoche);
     sec.setAttribute("data-hud-zeit", ep.zeitraum); sec.setAttribute("data-hud-jahr", st.jahr);
     var cfg = stationCfg(idx);
+    var bild = (window.WAHLKAMPF_BILDER || {})[st.id];
 
     sec.appendChild(el("div", "flair " + FLAIR[st.epoche].join(" ")));
     sec.appendChild(el("div", "motif"));
-    // Emblem in das "leere" Viertel gegenüber dem Infoblock
-    var emblem = el("div", "station__emblem", ICON[st.epoche] || "");
-    if (cfg.side < 0) emblem.style.bottom = "-4vh"; else emblem.style.top = "-4vh";
-    if (cfg.dx < 0) emblem.style.right = "-3vw"; else emblem.style.left = "-3vw";
-    sec.appendChild(emblem);
+    // Ohne Foto: blasses Ära-Symbol im "leeren" Viertel gegenüber dem Text
+    if (!bild) {
+      var emblem = el("div", "station__emblem", ICON[st.epoche] || "");
+      if (cfg.side < 0) emblem.style.bottom = "-4vh"; else emblem.style.top = "-4vh";
+      if (cfg.dx < 0) emblem.style.right = "-3vw"; else emblem.style.left = "-3vw";
+      sec.appendChild(emblem);
+    }
     addBeam(sec); addNode(sec);
 
     var inner = el("div", "station__inner reveal");
@@ -156,6 +159,17 @@
     inner.appendChild(el("p", "station__text", highlight(st.text)));
     sec.appendChild(inner);
     attach(sec, inner, cfg);
+
+    // Foto (gegenüberliegende Seite des Strahls, per eigener Linie angebunden)
+    if (bild) {
+      var fig = el("figure", "station__photo");
+      var img = el("img");
+      img.src = bild.src; img.alt = bild.alt || st.titel; img.loading = "lazy"; img.decoding = "async";
+      fig.appendChild(img);
+      if (bild.credit) fig.appendChild(el("figcaption", "station__credit", "Foto: " + esc(bild.credit)));
+      sec.appendChild(fig);
+      attach(sec, fig, { side: -cfg.side, dx: -cfg.dx, gap: 4 });
+    }
 
     app.appendChild(sec);
     navItems.push({ id: sec.id, jahr: st.jahr, titel: st.titel });

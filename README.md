@@ -39,6 +39,24 @@ Fonts geladen; ohne Netz greifen automatisch System-Schriften als Fallback.
 | `styles.css`  | Basis-Layout + Themes und Flair-Overlays je Epoche           |
 | `app.js`      | Baut die Präsentation aus den Daten und steuert das Scrollen |
 
+## Fotos
+
+Für die historischen Stationen (bis 1968) liegen gemeinfreie Porträts von
+**Wikimedia Commons** im Ordner `img/` (`station-<id>.jpg`). Die Zuordnung
+inkl. Bildnachweis steht in `bilder.js` (`window.WAHLKAMPF_BILDER`). Fehlt zu
+einer Station ein Eintrag, zeigt die Folie stattdessen das Ära-Symbol.
+
+**Eigenes Foto ergänzen:** Bild als `img/station-<id>.jpg` ablegen und in
+`bilder.js` einen Eintrag hinzufügen:
+
+```js
+"19": { "src": "img/station-19.jpg", "alt": "…", "credit": "… (Quelle/Lizenz)", "quelle": "https://…" }
+```
+
+> **Bildrechte:** Die vorbelegten Fotos sind gemeinfrei; jüngere Motive
+> (2008+) sind meist urheberrechtlich geschützt und daher **nicht** vorbelegt.
+> Bildnachweise vor der Präsentation final prüfen.
+
 ## Inhalte anpassen
 
 Texte, Jahre, Titel und Farbpaletten stehen in `data.js` und lassen sich dort

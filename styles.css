@@ -161,6 +161,15 @@ img { max-width:100%; }
   color:var(--accent); opacity:.07; pointer-events:none; will-change:transform; }
 .station__emblem svg { width:100%; height:100%; }
 
+/* gerahmtes Foto (gegenüber dem Text am Strahl) */
+.station__photo { position:absolute; z-index:6; margin:0; width:clamp(140px,16vw,220px); }
+.station__photo img { display:block; width:100%; height:auto; max-height:34vh; object-fit:cover; border-radius:6px;
+  border:3px solid var(--accent); box-shadow:0 12px 34px rgba(0,0,0,.4); background:var(--surface); }
+.station__credit { margin-top:.4rem; font-family:"Inter",sans-serif; font-size:.62rem; line-height:1.3; color:var(--muted); opacity:.9; max-width:24ch; }
+.station__photo.al-r .station__credit { margin-left:auto; text-align:right; }
+[data-epoche="I"] .station__photo img,[data-epoche="II"] .station__photo img,[data-epoche="III"] .station__photo img { filter:sepia(.32) contrast(1.03); }
+[data-epoche="IV"] .station__photo img,[data-epoche="V"] .station__photo img { filter:grayscale(.12) contrast(1.05); }
+
 /* =========================================================================
    FLAIR + MOTIVE (unverändert übernommen)
    ========================================================================= */
@@ -248,11 +257,13 @@ img { max-width:100%; }
    MOBIL: Strahl-Layout weicht lesbarem Stapel
    ========================================================================= */
 @media (max-width:760px){
-  .panel { display:flex; align-items:center; justify-content:center; padding:9vh 8vw; overflow-y:auto; }
+  .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:9vh 8vw; overflow-y:auto; }
   .beam-seg, .node, .conn, .conn-dot { display:none; }
   .station__inner, .epoch-divider__inner { position:static; width:100%; max-width:52ch; transform:none !important; text-align:left; }
   .epoch-divider__inner { text-align:center; justify-items:center; }
   .station__inner.al-r { text-align:left; }
   .station__inner.al-r .station__eyebrow { flex-direction:row; }
+  .station__photo { position:static; order:-1; width:min(56vw,210px); margin:0 0 1.1rem; transform:none !important; }
+  .station__photo.al-r .station__credit { margin:0.4rem auto 0; text-align:center; }
   .hero__inner { transform:none; }
 }
