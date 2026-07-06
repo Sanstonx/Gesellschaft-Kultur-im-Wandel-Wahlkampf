@@ -23,6 +23,7 @@ img { max-width:100%; }
   overflow-x:auto; overflow-y:hidden;
   scroll-snap-type:none; scroll-behavior:auto;   /* Bewegung steuert JS */
   scrollbar-width:none;
+  background:#12100c;             /* wird per JS beim Scrollen fließend interpoliert */
 }
 #app::-webkit-scrollbar { display:none; }
 
@@ -30,7 +31,7 @@ img { max-width:100%; }
   position:relative;
   flex:0 0 100vw; width:100vw; height:100vh; height:100dvh;
   overflow:hidden;
-  background:var(--bg,#0a0a0a); color:var(--ink,#eee);
+  background:transparent; color:var(--ink,#eee);   /* Hintergrund fließt über #app */
   contain:paint;                 /* Paint pro Folie isolieren → flüssigeres Scrollen */
 }
 .hero, .fazit, .footer-panel { display:grid; place-items:center; padding:10vh 8vw; text-align:center; }
@@ -189,7 +190,7 @@ img { max-width:100%; }
     radial-gradient(35% 30% at 70% 15%, rgba(0,229,168,.18), transparent 70%); }
 .flair--gloss::before { content:""; position:absolute; inset:0; opacity:.55;
   background:linear-gradient(180deg, rgba(255,255,255,.55), transparent 30%), radial-gradient(60% 40% at 50% 0%, rgba(45,127,249,.18), transparent 70%); }
-.flair--flags::before { content:""; position:absolute; inset:0; opacity:.1; background:repeating-linear-gradient(90deg, var(--accent) 0 8px, transparent 8px 44px); }
+.flair--flags::before { content:""; position:absolute; inset:0; opacity:.05; background:repeating-linear-gradient(90deg, var(--accent) 0 6px, transparent 6px 72px); }
 
 [data-epoche="I"] .motif::after { content:""; position:absolute; left:50%; bottom:-14%; transform:translateX(-50%); width:64vmin; height:64vmin; border-radius:50%; background:radial-gradient(circle, rgba(217,164,65,.30), transparent 62%); animation:candle 4.5s ease-in-out infinite; }
 @keyframes candle { 0%,100%{opacity:.7} 48%{opacity:1} 52%{opacity:.62} }

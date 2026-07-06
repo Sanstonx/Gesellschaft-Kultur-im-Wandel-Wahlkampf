@@ -85,7 +85,6 @@
   /* --- HERO ------------------------------------------------------------ */
   (function () {
     var hero = el("section", "panel hero"); hero.setAttribute("data-epoche", "I"); hero.setAttribute("data-hud-skip", "1");
-    addBeam(hero);
     var words = el("div", "hero__words");
     ["stand, don't run","Fireside Chat","It's the economy","Yes We Can","Morning in America","post-truth","Tippecanoe","Fake News","Daisy","War Room"]
       .forEach(function (w, i) { var s = el("span", null, w); s.style.top = (6 + i * 9) + "%"; s.style.left = ((i % 2 === 0) ? 6 : 52) + "%"; s.style.animationDelay = (i * -2.4) + "s"; words.appendChild(s); });
@@ -179,8 +178,8 @@
   (function () {
     var f = DATA.fazit;
     var sec = el("section", "panel fazit"); sec.id = "fazit"; sec.setAttribute("data-epoche", "VIII");
-    sec.setAttribute("data-hud-name", "Fazit"); sec.setAttribute("data-hud-jahr", "Fazit");
-    sec.appendChild(el("div", "flair flair--neon")); sec.appendChild(el("div", "motif")); addBeam(sec);
+    sec.setAttribute("data-hud-name", "Fazit"); sec.setAttribute("data-hud-jahr", "");
+    sec.appendChild(el("div", "flair flair--neon")); sec.appendChild(el("div", "motif"));
     var inner = el("div", "fazit__inner reveal");
     inner.appendChild(el("div", "fazit__kicker", "Fazit"));
     inner.appendChild(el("h2", "fazit__title", esc(f.titel)));
@@ -195,8 +194,7 @@
   /* --- FOOTER ---------------------------------------------------------- */
   (function () {
     var sec = el("section", "panel footer-panel"); sec.id = "footer"; sec.setAttribute("data-epoche", "I");
-    sec.setAttribute("data-hud-jahr", ""); sec.setAttribute("data-hud-name", "");
-    addBeam(sec);
+    sec.setAttribute("data-hud-skip", "1");
     var inner = el("div", "footer-panel__inner");
     inner.appendChild(el("div", "footer-panel__mark", "★"));
     inner.appendChild(el("p", "footer-panel__note", esc(DATA.meta.hinweis)));
@@ -230,6 +228,26 @@
   var emblems = Array.prototype.slice.call(document.querySelectorAll(".station__emblem"));
   function maxX() { return app.scrollWidth - app.clientWidth; }
   function clamp(x) { return Math.max(0, Math.min(maxX(), x)); }
+
+  /* --- Farben: fließende Hintergrund- & Strahl-Übergänge --------------- */
+  var ACCENT = { I:"#6b4f2a", II:"#b23a2e", III:"#5f4a2f", IV:"#c8a24a", V:"#c0392b", VI:"#e01e5a", VII:"#2d7ff9", VIII:"#1da1f2" };
+  var BGC = { I:"#f2e8d5", II:"#e8dcc0", III:"#d8cbb3", IV:"#101418", V:"#1a1a1a", VI:"#0b1e3f", VII:"#eaf2fb", VIII:"#0d0d12" };
+  function h2(c) { return [parseInt(c.substr(1, 2), 16), parseInt(c.substr(3, 2), 16), parseInt(c.substr(5, 2), 16)]; }
+  function toHex(r, g, b) { function s(x) { x = Math.round(Math.max(0, Math.min(255, x))).toString(16); return x.length < 2 ? "0" + x : x; } return "#" + s(r) + s(g) + s(b); }
+  function mix(a, b) { var x = h2(a), y = h2(b); return toHex((x[0] + y[0]) / 2, (x[1] + y[1]) / 2, (x[2] + y[2]) / 2); }
+  function lerpHex(a, b, t) { var x = h2(a), y = h2(b); return toHex(x[0] + (y[0] - x[0]) * t, x[1] + (y[1] - x[1]) * t, x[2] + (y[2] - x[2]) * t); }
+  // Hintergrund-/Akzentfarbe je Panel (Sonderfolien dunkel getönt)
+  var bgArr = panelArr.map(function (p) { return p.id === "hero" ? "#14100b" : p.id === "fazit" ? "#0d0d12" : p.id === "footer" ? "#0a0a0a" : (BGC[p.getAttribute("data-epoche")] || "#0a0a0a"); });
+  var accArr = panelArr.map(function (p) { return ACCENT[p.getAttribute("data-epoche")] || "#d9a441"; });
+  // Strahl-Segmente an den Rändern zu den Nachbar-Akzenten blenden → kein Farbsprung
+  (function () {
+    var segs = Array.prototype.slice.call(document.querySelectorAll(".beam-seg"));
+    var acc = segs.map(function (s) { return ACCENT[s.parentNode.getAttribute("data-epoche")] || "#d9a441"; });
+    segs.forEach(function (s, i) {
+      var c = acc[i], pv = acc[i - 1] || c, nx = acc[i + 1] || c;
+      s.style.background = "linear-gradient(90deg," + mix(pv, c) + " 0%," + c + " 42%," + c + " 58%," + mix(c, nx) + " 100%)";
+    });
+  })();
 
   var target = app.scrollLeft, current = target, animating = false;
   function frame() {
@@ -278,15 +296,24 @@
   function measure() { centers = emblems.map(function (e) { var p = e.parentNode; return p.offsetLeft + p.offsetWidth / 2; }); }
   measure();
 
-  var ticking = false;
+  var ticking = false, lastActive = -1;
   function updateVisual() {
-    var mx = maxX();
+    var mx = maxX(), w = app.clientWidth || 1;
     progress.style.width = (mx > 0 ? app.scrollLeft / mx * 100 : 0) + "%";
-    var vc = app.scrollLeft + app.clientWidth / 2, w = app.clientWidth;
+    // fließender Hintergrund: zwischen den beiden nächstliegenden Folien interpolieren
+    var pos = app.scrollLeft / w;
+    var i0 = Math.max(0, Math.min(bgArr.length - 1, Math.floor(pos)));
+    var i1 = Math.min(bgArr.length - 1, i0 + 1), f = Math.max(0, Math.min(1, pos - i0));
+    app.style.background = lerpHex(bgArr[i0], bgArr[i1], f);
+    // Parallaxe
+    var vc = app.scrollLeft + w / 2;
     for (var i = 0; i < emblems.length; i++) {
       var d = centers[i] - vc;
       if (Math.abs(d) < w * 1.5) emblems[i].style.transform = "translateX(" + (d * -0.05) + "px)";
     }
+    // aktive Folie (nächste zur Mitte) → HUD/Knoten/Timeline
+    var ai = Math.max(0, Math.min(panelArr.length - 1, Math.round(pos)));
+    if (ai !== lastActive) { setActive(ai); lastActive = ai; }
   }
   app.addEventListener("scroll", function () {
     if (!animating) { target = current = app.scrollLeft; }
@@ -302,28 +329,27 @@
   document.querySelectorAll(".reveal").forEach(function (n) { revealObs.observe(n); });
 
   var lastNode = null;
-  var activeObs = new IntersectionObserver(function (es) {
-    es.forEach(function (e) {
-      if (!e.isIntersecting) return;
-      var sec = e.target, accent = getComputedStyle(sec).getPropertyValue("--accent").trim();
-      if (accent) progress.style.color = accent;
-      if (sec.hasAttribute("data-hud-skip")) hud.style.opacity = "0";
-      else {
-        hud.style.opacity = "1";
-        var jahr = sec.getAttribute("data-hud-jahr") || "", epn = sec.getAttribute("data-hud-epoche");
-        hudJahr.textContent = jahr; hudEpoche.textContent = epn ? "Epoche " + epn : "";
-        hudName.textContent = sec.getAttribute("data-hud-name") || ""; hudZeit.textContent = sec.getAttribute("data-hud-zeit") || "";
-      }
-      if (lastNode) lastNode.classList.remove("is-active");
-      if (sec._node) { sec._node.classList.add("is-active"); lastNode = sec._node; }
-      dots.forEach(function (d) {
-        var on = d.getAttribute("data-target") === sec.id;
-        d.setAttribute("aria-current", on ? "true" : "false");
-        if (on && accent) { d.style.setProperty("--dot", accent); d.scrollIntoView({ block: "nearest", inline: "nearest" }); }
-      });
-    });
-  }, { root: app, threshold: 0.55 });
-  panelArr.forEach(function (p) { activeObs.observe(p); });
+  function setActive(idx) {
+    var sec = panelArr[idx], accent = accArr[idx];
+    progress.style.color = accent;
+    if (sec.hasAttribute("data-hud-skip")) hud.style.opacity = "0";
+    else {
+      hud.style.opacity = "1";
+      var epn = sec.getAttribute("data-hud-epoche");
+      hudJahr.textContent = sec.getAttribute("data-hud-jahr") || "";
+      hudEpoche.textContent = epn ? "Epoche " + epn : "";
+      hudName.textContent = sec.getAttribute("data-hud-name") || "";
+      hudZeit.textContent = sec.getAttribute("data-hud-zeit") || "";
+    }
+    if (lastNode) lastNode.classList.remove("is-active");
+    if (sec._node) { sec._node.classList.add("is-active"); lastNode = sec._node; }
+    for (var k = 0; k < dots.length; k++) {
+      var on = dots[k].getAttribute("data-target") === sec.id;
+      dots[k].setAttribute("aria-current", on ? "true" : "false");
+      if (on) { dots[k].style.setProperty("--dot", accent); dots[k].scrollIntoView({ block: "nearest", inline: "nearest" }); }
+    }
+  }
+  setActive(0);
 
   /* --- Tastatur -------------------------------------------------------- */
   function currentIndex() { var x = app.scrollLeft + app.clientWidth * 0.5, idx = 0; for (var i = 0; i < panelArr.length; i++) if (panelArr[i].offsetLeft <= x) idx = i; return idx; }
