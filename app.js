@@ -54,7 +54,7 @@
   function addBeam(panel) { panel.appendChild(el("div", "beam-seg")); }
   function addNode(panel) { var n = el("div", "node"); panel.appendChild(n); panel._node = n; return n; }
 
-  // Blockposition + saubere gerade Verbindungslinie (Knoten → Blockkante)
+  // Blockposition + senkrechter Stiel, der DIREKT am Strahl ansetzt (Ankerpunkt auf dem Strahl)
   var connectors = [];
   function attach(panel, block, cfg) {
     var up = cfg.side < 0, gap = cfg.gap, dx = cfg.dx;
@@ -64,19 +64,21 @@
     if (dx < -1) block.classList.add("al-r");
 
     var line = el("div", "conn2");
-    panel.appendChild(line);
-    connectors.push({ line: line, dx: dx, gap: gap, up: up });
+    var anchor = el("div", "conn-anchor");
+    panel.appendChild(line); panel.appendChild(anchor);
+    connectors.push({ line: line, anchor: anchor, dx: dx, gap: gap, up: up });
   }
-  // gerade Diagonalen in px berechnen (responsiv, bei Resize neu)
+  // senkrechte Stiele in px berechnen (responsiv, bei Resize neu)
   function layoutConnectors() {
-    var pw = app.clientWidth, ph = app.clientHeight;
+    var pw = app.clientWidth, ph = app.clientHeight, yBeam = ph * 0.5;
     for (var i = 0; i < connectors.length; i++) {
       var c = connectors[i];
-      var x1 = pw * 0.5, y1 = ph * 0.5;
-      var x2 = pw * (50 + c.dx) / 100, y2 = ph * (c.up ? (50 - c.gap) : (50 + c.gap)) / 100;
-      var ddx = x2 - x1, ddy = y2 - y1, len = Math.hypot(ddx, ddy), ang = Math.atan2(ddy, ddx) * 180 / Math.PI;
-      c.line.style.left = x1 + "px"; c.line.style.top = y1 + "px";
-      c.line.style.width = len + "px"; c.line.style.transform = "rotate(" + ang + "deg)";
+      var x = pw * (50 + c.dx) / 100, yBlock = ph * (c.up ? (50 - c.gap) : (50 + c.gap)) / 100;
+      c.line.style.left = (x - 1) + "px";
+      c.line.style.top = Math.min(yBeam, yBlock) + "px";
+      c.line.style.width = "2px";
+      c.line.style.height = Math.abs(yBlock - yBeam) + "px";
+      c.anchor.style.left = x + "px"; c.anchor.style.top = yBeam + "px";
     }
   }
 
@@ -247,14 +249,32 @@
   var bgArr = panelArr.map(function (p) { return p.id === "hero" ? "#14100b" : p.id === "fazit" ? "#0d0d12" : p.id === "footer" ? "#0a0a0a" : (BGC[p.getAttribute("data-epoche")] || "#0a0a0a"); });
   var accArr = panelArr.map(function (p) { return ACCENT[p.getAttribute("data-epoche")] || "#d9a441"; });
   var n = panelArr.length;
-  // durchgehender Farb-Gradient-Hintergrund über die ganze Spur (echter Verlauf)
+  // Geglätteter Verlauf: fein abgetastet mit Smootherstep zwischen Panel-Mitten
+  // → sanfte S-Kurve an den Übergängen, kein Knick (kein Slope-Sprung).
+  function smoothGrad(cols) {
+    var m = cols.length;
+    if (m < 2) return cols[0] || "#000";
+    var c = []; for (var i = 0; i < m; i++) c.push((i + 0.5) / m);   // Panel-Mitten
+    var N = Math.min(220, Math.max(60, m * 7)), out = [];
+    for (var s = 0; s <= N; s++) {
+      var t = s / N, col;
+      if (t <= c[0]) col = cols[0];
+      else if (t >= c[m - 1]) col = cols[m - 1];
+      else {
+        var k = 0; while (k < m - 2 && t >= c[k + 1]) k++;
+        var f = (t - c[k]) / (c[k + 1] - c[k]);
+        f = f * f * f * (f * (f * 6 - 15) + 10);          // smootherstep
+        col = lerpHex(cols[k], cols[k + 1], f);
+      }
+      out.push(col + " " + (t * 100).toFixed(2) + "%");
+    }
+    return "linear-gradient(90deg," + out.join(",") + ")";
+  }
+  // durchgehender Farb-Gradient-Hintergrund über die ganze Spur
   (function () {
-    var s = [bgArr[0] + " 0%"];
-    for (var i = 0; i < n; i++) s.push(bgArr[i] + " " + (((i + 0.5) / n) * 100).toFixed(2) + "%");
-    s.push(bgArr[n - 1] + " 100%");
     var wash = el("div", "bgwash");
     wash.style.width = (n * 100) + "vw";
-    wash.style.background = "linear-gradient(90deg," + s.join(",") + ")";
+    wash.style.background = smoothGrad(bgArr);
     app.insertBefore(wash, app.firstChild);
   })();
   // EIN durchgehender Zeitstrahl: erste Titelseite → letzte Station, nie unterbrochen
@@ -266,12 +286,10 @@
     }
     if (first < 0 || last < 0) return;
     var bacc = panelArr.map(function (p) { return (p.id === "hero" || p.id === "footer") ? "#c8a24a" : (ACCENT[p.getAttribute("data-epoche")] || "#c8a24a"); });
-    var cnt = last - first + 1, s = [bacc[first] + " 0%"];
-    for (var j = first; j <= last; j++) s.push(bacc[j] + " " + (((j - first + 0.5) / cnt) * 100).toFixed(2) + "%");
-    s.push(bacc[last] + " 100%");
+    var cnt = last - first + 1;
     var beam = el("div", "beam");
     beam.style.left = (first * 100) + "vw"; beam.style.width = (cnt * 100) + "vw";
-    beam.style.background = "linear-gradient(90deg," + s.join(",") + ")";
+    beam.style.background = smoothGrad(bacc.slice(first, last + 1));
     app.insertBefore(beam, app.children[1] || null);   // direkt über den bgwash
   })();
 

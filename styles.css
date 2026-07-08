@@ -73,10 +73,10 @@ img { max-width:100%; }
 .node.is-active::after { animation:pulse 2.2s ease-out infinite; }
 @keyframes pulse { 0%{ transform:scale(1); opacity:.7 } 100%{ transform:scale(3.4); opacity:0 } }
 
-/* gerade Verbindungslinie (Knoten → Blockkante) */
-.conn2 { position:absolute; height:2px; background:var(--accent); opacity:.42; transform-origin:0 50%; z-index:4; border-radius:2px; }
-.conn2::after { content:""; position:absolute; right:-3px; top:50%; width:7px; height:7px; border-radius:50%;
-  background:var(--accent); transform:translateY(-50%); box-shadow:0 0 9px color-mix(in srgb, var(--accent) 75%, transparent); }
+/* senkrechter Stiel + Ankerpunkt direkt auf dem Strahl */
+.conn2 { position:absolute; width:2px; background:var(--accent); opacity:.4; z-index:4; border-radius:2px; }
+.conn-anchor { position:absolute; width:8px; height:8px; border-radius:50%; background:var(--accent);
+  transform:translate(-50%,-50%); z-index:4; box-shadow:0 0 8px color-mix(in srgb, var(--accent) 70%, transparent); }
 
 /* =========================================================================
    FORTSCHRITT / HUD / TIMELINE
@@ -272,7 +272,7 @@ img { max-width:100%; }
    ========================================================================= */
 @media (max-width:760px){
   .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:9vh 8vw; overflow-y:auto; }
-  .beam, .node, .conn2 { display:none; }
+  .beam, .node, .conn2, .conn-anchor { display:none; }
   .station__inner, .epoch-divider__top, .epoch-divider__bot { position:static; left:auto; width:100%; max-width:52ch; transform:none !important; text-align:left; }
   .epoch-divider__top, .epoch-divider__bot { text-align:center; justify-items:center; }
   .epoch-divider__bot { margin-top:.6rem; }
