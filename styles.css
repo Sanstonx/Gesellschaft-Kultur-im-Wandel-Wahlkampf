@@ -136,6 +136,9 @@ img { max-width:100%; }
 /* =========================================================================
    EPOCHEN-TRENNER (Kapitelmarke am Strahl)
    ========================================================================= */
+/* weicher Akzent-Schimmer hinter der Überschrift → belebt den Ära-Eintritt */
+.epoch-divider::before { content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
+  background:radial-gradient(56% 48% at 50% 42%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 72%); }
 /* großes, blasses Ziffern-Wasserzeichen der Epoche */
 .epoch-divider__wm { position:absolute; inset:0; display:grid; place-items:center; z-index:1; pointer-events:none;
   font-family:var(--font-display); font-weight:800; font-size:min(48vh,26vw); line-height:1; color:var(--accent); opacity:.07; letter-spacing:.04em; }

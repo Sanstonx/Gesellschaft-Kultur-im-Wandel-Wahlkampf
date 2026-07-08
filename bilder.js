@@ -1,5 +1,6 @@
-/* Automatisch beschaffte gemeinfreie Porträts (Wikimedia Commons).
-   Historische Ären bis 1968. Vor der Präsentation Bildrechte/Bildunterschriften final prüfen. */
+/* Gemeinfreie Porträts (Wikimedia Commons). Präsidenten = offizielle
+   Regierungsporträts (US-Gov, gemeinfrei). Bildnachweise vor der
+   Präsentation final prüfen. 14/16/21 bleiben für eigene Bilder frei. */
 window.WAHLKAMPF_BILDER = {
   "1": {
     "src": "img/station-1.jpg",
@@ -72,5 +73,41 @@ window.WAHLKAMPF_BILDER = {
     "alt": "Richard Nixon",
     "credit": "Richard Nixon — Wikimedia Commons (gemeinfrei)",
     "quelle": "https://en.wikipedia.org/wiki/Richard_Nixon"
+  },
+  "13": {
+    "src": "img/station-13.jpg",
+    "alt": "Ronald Reagan",
+    "credit": "Ronald Reagan — Wikimedia Commons (gemeinfrei)",
+    "quelle": "https://en.wikipedia.org/wiki/Ronald_Reagan"
+  },
+  "15": {
+    "src": "img/station-15.jpg",
+    "alt": "Bill Clinton",
+    "credit": "Bill Clinton — Wikimedia Commons (gemeinfrei)",
+    "quelle": "https://en.wikipedia.org/wiki/Bill_Clinton"
+  },
+  "17": {
+    "src": "img/station-17.jpg",
+    "alt": "Barack Obama",
+    "credit": "Barack Obama — Wikimedia Commons (gemeinfrei)",
+    "quelle": "https://en.wikipedia.org/wiki/Barack_Obama"
+  },
+  "18": {
+    "src": "img/station-18.jpg",
+    "alt": "Barack Obama",
+    "credit": "Barack Obama — Wikimedia Commons (gemeinfrei)",
+    "quelle": "https://en.wikipedia.org/wiki/Barack_Obama"
+  },
+  "19": {
+    "src": "img/station-19.jpg",
+    "alt": "Donald Trump",
+    "credit": "Donald Trump — Wikimedia Commons (gemeinfrei)",
+    "quelle": "https://en.wikipedia.org/wiki/Donald_Trump"
+  },
+  "20": {
+    "src": "img/station-20.jpg",
+    "alt": "Joe Biden",
+    "credit": "Joe Biden — Wikimedia Commons (gemeinfrei)",
+    "quelle": "https://en.wikipedia.org/wiki/Joe_Biden"
   }
 };
