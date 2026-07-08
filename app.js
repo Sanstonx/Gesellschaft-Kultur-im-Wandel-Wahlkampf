@@ -46,6 +46,10 @@
     return { side: side, dx: dx, gap: gap };
   }
 
+  /* --- Ära-Farben (Akzent + Hintergrund) ------------------------------- */
+  var ACCENT = { I:"#6b4f2a", II:"#b23a2e", III:"#5f4a2f", IV:"#c8a24a", V:"#c0392b", VI:"#e01e5a", VII:"#2d7ff9", VIII:"#1da1f2" };
+  var BGC = { I:"#f2e8d5", II:"#e8dcc0", III:"#d8cbb3", IV:"#101418", V:"#1a1a1a", VI:"#0b1e3f", VII:"#eaf2fb", VIII:"#0d0d12" };
+
   /* --- Strahl-Bausteine ------------------------------------------------ */
   function addBeam(panel) { panel.appendChild(el("div", "beam-seg")); }
   function addNode(panel) { var n = el("div", "node"); panel.appendChild(n); panel._node = n; return n; }
@@ -100,28 +104,30 @@
   })();
 
   /* --- EPOCHEN + STATIONEN --------------------------------------------- */
-  var lastEpoche = null, divCount = 0;
+  var lastEpoche = null, divCount = 0, prevBg = "#14100b";
   DATA.stationen.forEach(function (st, idx) {
     var ep = DATA.epochen[st.epoche];
 
     if (st.epoche !== lastEpoche) {
       lastEpoche = st.epoche;
+      // Epochen-Trenner = zentrierte „Titelseite" mit großer Überschrift
       var div = el("section", "panel epoch-divider reveal");
       div.id = "epoche-" + st.epoche;
       div.setAttribute("data-epoche", st.epoche);
       div.setAttribute("data-hud-name", ep.name); div.setAttribute("data-hud-epoche", st.epoche);
       div.setAttribute("data-hud-zeit", ep.zeitraum); div.setAttribute("data-hud-jahr", ep.zeitraum.split("–")[0]);
+      div.style.setProperty("--prevbg", prevBg);   // Farbe der vorigen Ära → weicher Einlauf
+      prevBg = BGC[st.epoche] || prevBg;
       div.appendChild(el("div", "flair " + FLAIR[st.epoche].join(" ")));
       div.appendChild(el("div", "motif"));
-      addBeam(div); addNode(div);
+      div.appendChild(el("div", "epoch-divider__wm", st.epoche));   // großes, blasses Ziffern-Wasserzeichen
       var dinner = el("div", "epoch-divider__inner");
       dinner.appendChild(el("div", "epoch-divider__emblem", ICON[st.epoche] || ""));
-      dinner.appendChild(el("div", "epoch-divider__zeit", esc(ep.zeitraum)));
       dinner.appendChild(el("div", "epoch-divider__num", "Epoche " + st.epoche));
       dinner.appendChild(el("h2", "epoch-divider__name", esc(ep.name)));
+      dinner.appendChild(el("div", "epoch-divider__zeit", esc(ep.zeitraum)));
       dinner.appendChild(el("p", "epoch-divider__flair", "„" + esc(ep.flair) + "“"));
       div.appendChild(dinner);
-      attach(div, dinner, { side: (divCount % 2 === 0 ? -1 : 1), dx: 0, gap: 3 });
       divCount++;
       app.appendChild(div);
       navItems.push({ id: div.id, jahr: ep.zeitraum.split("–")[0], titel: ep.name });
@@ -161,13 +167,16 @@
 
     // Foto (gegenüberliegende Seite des Strahls, per eigener Linie angebunden)
     if (bild) {
-      var fig = el("figure", "station__photo");
+      // Foto liegt auf der GEGENÜBERLIEGENDEN Strahlseite; Bild immer strahlnah,
+      // Bildunterschrift außen → Verbindungslinie trifft die Bildkante sauber.
+      var photoUp = cfg.side > 0;
+      var fig = el("figure", "station__photo " + (photoUp ? "is-up" : "is-down"));
       var img = el("img");
       img.src = bild.src; img.alt = bild.alt || st.titel; img.loading = "lazy"; img.decoding = "async";
       fig.appendChild(img);
       if (bild.credit) fig.appendChild(el("figcaption", "station__credit", "Foto: " + esc(bild.credit)));
       sec.appendChild(fig);
-      attach(sec, fig, { side: -cfg.side, dx: -cfg.dx, gap: 4 });
+      attach(sec, fig, { side: -cfg.side, dx: -cfg.dx, gap: 3 });
     }
 
     app.appendChild(sec);
@@ -230,8 +239,6 @@
   function clamp(x) { return Math.max(0, Math.min(maxX(), x)); }
 
   /* --- Farben: fließende Hintergrund- & Strahl-Übergänge --------------- */
-  var ACCENT = { I:"#6b4f2a", II:"#b23a2e", III:"#5f4a2f", IV:"#c8a24a", V:"#c0392b", VI:"#e01e5a", VII:"#2d7ff9", VIII:"#1da1f2" };
-  var BGC = { I:"#f2e8d5", II:"#e8dcc0", III:"#d8cbb3", IV:"#101418", V:"#1a1a1a", VI:"#0b1e3f", VII:"#eaf2fb", VIII:"#0d0d12" };
   function h2(c) { return [parseInt(c.substr(1, 2), 16), parseInt(c.substr(3, 2), 16), parseInt(c.substr(5, 2), 16)]; }
   function toHex(r, g, b) { function s(x) { x = Math.round(Math.max(0, Math.min(255, x))).toString(16); return x.length < 2 ? "0" + x : x; } return "#" + s(r) + s(g) + s(b); }
   function mix(a, b) { var x = h2(a), y = h2(b); return toHex((x[0] + y[0]) / 2, (x[1] + y[1]) / 2, (x[2] + y[2]) / 2); }
@@ -304,6 +311,7 @@
     var pos = app.scrollLeft / w;
     var i0 = Math.max(0, Math.min(bgArr.length - 1, Math.floor(pos)));
     var i1 = Math.min(bgArr.length - 1, i0 + 1), f = Math.max(0, Math.min(1, pos - i0));
+    f = f * f * f * (f * (f * 6 - 15) + 10);   // smootherstep → sanfter Farbverlauf, kein harter Ansatz
     app.style.background = lerpHex(bgArr[i0], bgArr[i1], f);
     // Parallaxe
     var vc = app.scrollLeft + w / 2;
