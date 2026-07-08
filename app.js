@@ -54,32 +54,30 @@
   function addBeam(panel) { panel.appendChild(el("div", "beam-seg")); }
   function addNode(panel) { var n = el("div", "node"); panel.appendChild(n); panel._node = n; return n; }
 
-  // Verbindungslinie Knoten → Block + Positionierung des Blocks
+  // Blockposition + saubere gerade Verbindungslinie (Knoten → Blockkante)
+  var connectors = [];
   function attach(panel, block, cfg) {
     var up = cfg.side < 0, gap = cfg.gap, dx = cfg.dx;
-    var edgeY = up ? (50 - gap) : (50 + gap);           // vh, innere Kante des Blocks
-
-    var vert = el("div", "conn");
-    vert.style.left = "calc(50vw - 1px)"; vert.style.width = "2px";
-    vert.style.height = gap + "vh";
-    if (up) vert.style.bottom = "50vh"; else vert.style.top = "50vh";
-    panel.appendChild(vert);
-
-    if (Math.abs(dx) > 0.5) {
-      var horiz = el("div", "conn");
-      horiz.style.height = "2px"; horiz.style.top = "calc(" + edgeY + "vh - 1px)";
-      if (dx >= 0) { horiz.style.left = "50vw"; horiz.style.width = dx + "vw"; }
-      else { horiz.style.left = (50 + dx) + "vw"; horiz.style.width = (-dx) + "vw"; }
-      panel.appendChild(horiz);
-    }
-    var dot = el("div", "conn-dot");
-    dot.style.left = (50 + dx) + "vw"; dot.style.top = edgeY + "vh";
-    panel.appendChild(dot);
-
     block.style.left = (50 + dx) + "vw";
     block.style.transform = "translateX(-50%)";
     if (up) block.style.bottom = (50 + gap) + "vh"; else block.style.top = (50 + gap) + "vh";
     if (dx < -1) block.classList.add("al-r");
+
+    var line = el("div", "conn2");
+    panel.appendChild(line);
+    connectors.push({ line: line, dx: dx, gap: gap, up: up });
+  }
+  // gerade Diagonalen in px berechnen (responsiv, bei Resize neu)
+  function layoutConnectors() {
+    var pw = app.clientWidth, ph = app.clientHeight;
+    for (var i = 0; i < connectors.length; i++) {
+      var c = connectors[i];
+      var x1 = pw * 0.5, y1 = ph * 0.5;
+      var x2 = pw * (50 + c.dx) / 100, y2 = ph * (c.up ? (50 - c.gap) : (50 + c.gap)) / 100;
+      var ddx = x2 - x1, ddy = y2 - y1, len = Math.hypot(ddx, ddy), ang = Math.atan2(ddy, ddx) * 180 / Math.PI;
+      c.line.style.left = x1 + "px"; c.line.style.top = y1 + "px";
+      c.line.style.width = len + "px"; c.line.style.transform = "rotate(" + ang + "deg)";
+    }
   }
 
   var app = document.getElementById("app");
@@ -88,7 +86,7 @@
 
   /* --- HERO ------------------------------------------------------------ */
   (function () {
-    var hero = el("section", "panel hero"); hero.setAttribute("data-epoche", "I"); hero.setAttribute("data-hud-skip", "1");
+    var hero = el("section", "panel hero"); hero.id = "hero"; hero.setAttribute("data-epoche", "I"); hero.setAttribute("data-hud-skip", "1");
     var words = el("div", "hero__words");
     ["stand, don't run","Fireside Chat","It's the economy","Yes We Can","Morning in America","post-truth","Tippecanoe","Fake News","Daisy","War Room"]
       .forEach(function (w, i) { var s = el("span", null, w); s.style.top = (6 + i * 9) + "%"; s.style.left = ((i % 2 === 0) ? 6 : 52) + "%"; s.style.animationDelay = (i * -2.4) + "s"; words.appendChild(s); });
@@ -116,19 +114,21 @@
       div.setAttribute("data-epoche", st.epoche);
       div.setAttribute("data-hud-name", ep.name); div.setAttribute("data-hud-epoche", st.epoche);
       div.setAttribute("data-hud-zeit", ep.zeitraum); div.setAttribute("data-hud-jahr", ep.zeitraum.split("–")[0]);
-      div.style.setProperty("--prevbg", prevBg);   // Farbe der vorigen Ära → weicher Einlauf
-      prevBg = BGC[st.epoche] || prevBg;
       div.appendChild(el("div", "flair " + FLAIR[st.epoche].join(" ")));
       div.appendChild(el("div", "motif"));
       div.appendChild(el("div", "epoch-divider__wm", st.epoche));   // großes, blasses Ziffern-Wasserzeichen
-      var dinner = el("div", "epoch-divider__inner");
-      dinner.appendChild(el("div", "epoch-divider__emblem", ICON[st.epoche] || ""));
-      dinner.appendChild(el("div", "epoch-divider__num", "Epoche " + st.epoche));
-      dinner.appendChild(el("h2", "epoch-divider__name", esc(ep.name)));
-      dinner.appendChild(el("div", "epoch-divider__zeit", esc(ep.zeitraum)));
-      dinner.appendChild(el("p", "epoch-divider__flair", "„" + esc(ep.flair) + "“"));
-      div.appendChild(dinner);
-      divCount++;
+      addNode(div);   // Knoten auf dem durchgehenden Strahl
+      // Überschrift oberhalb, Zeitraum/Flair unterhalb des Strahls → Strahl läuft sauber hindurch
+      var dtop = el("div", "epoch-divider__top");
+      dtop.appendChild(el("div", "epoch-divider__emblem", ICON[st.epoche] || ""));
+      dtop.appendChild(el("div", "epoch-divider__num", "Epoche " + st.epoche));
+      dtop.appendChild(el("h2", "epoch-divider__name", esc(ep.name)));
+      var dbot = el("div", "epoch-divider__bot");
+      dbot.appendChild(el("div", "epoch-divider__zeit", esc(ep.zeitraum)));
+      dbot.appendChild(el("p", "epoch-divider__flair", "„" + esc(ep.flair) + "“"));
+      div.appendChild(dtop); div.appendChild(dbot);
+      attach(div, dtop, { side: -1, dx: 0, gap: 7 });
+      attach(div, dbot, { side: 1, dx: 0, gap: 7 });
       app.appendChild(div);
       navItems.push({ id: div.id, jahr: ep.zeitraum.split("–")[0], titel: ep.name });
     }
@@ -150,7 +150,7 @@
       if (cfg.dx < 0) emblem.style.right = "-3vw"; else emblem.style.left = "-3vw";
       sec.appendChild(emblem);
     }
-    addBeam(sec); addNode(sec);
+    addNode(sec);   // Knoten auf dem durchgehenden Strahl
 
     var inner = el("div", "station__inner reveal");
     inner.appendChild(el("div", "station__no", "Station " + pad(st.id) + " / " + total));
@@ -246,14 +246,33 @@
   // Hintergrund-/Akzentfarbe je Panel (Sonderfolien dunkel getönt)
   var bgArr = panelArr.map(function (p) { return p.id === "hero" ? "#14100b" : p.id === "fazit" ? "#0d0d12" : p.id === "footer" ? "#0a0a0a" : (BGC[p.getAttribute("data-epoche")] || "#0a0a0a"); });
   var accArr = panelArr.map(function (p) { return ACCENT[p.getAttribute("data-epoche")] || "#d9a441"; });
-  // Strahl-Segmente an den Rändern zu den Nachbar-Akzenten blenden → kein Farbsprung
+  var n = panelArr.length;
+  // durchgehender Farb-Gradient-Hintergrund über die ganze Spur (echter Verlauf)
   (function () {
-    var segs = Array.prototype.slice.call(document.querySelectorAll(".beam-seg"));
-    var acc = segs.map(function (s) { return ACCENT[s.parentNode.getAttribute("data-epoche")] || "#d9a441"; });
-    segs.forEach(function (s, i) {
-      var c = acc[i], pv = acc[i - 1] || c, nx = acc[i + 1] || c;
-      s.style.background = "linear-gradient(90deg," + mix(pv, c) + " 0%," + c + " 42%," + c + " 58%," + mix(c, nx) + " 100%)";
-    });
+    var s = [bgArr[0] + " 0%"];
+    for (var i = 0; i < n; i++) s.push(bgArr[i] + " " + (((i + 0.5) / n) * 100).toFixed(2) + "%");
+    s.push(bgArr[n - 1] + " 100%");
+    var wash = el("div", "bgwash");
+    wash.style.width = (n * 100) + "vw";
+    wash.style.background = "linear-gradient(90deg," + s.join(",") + ")";
+    app.insertBefore(wash, app.firstChild);
+  })();
+  // EIN durchgehender Zeitstrahl: erste Titelseite → letzte Station, nie unterbrochen
+  (function () {
+    var first = -1, last = -1;
+    for (var i = 0; i < n; i++) {
+      if (panelArr[i].classList.contains("epoch-divider") && first < 0) first = i;
+      if (panelArr[i].classList.contains("station")) last = i;
+    }
+    if (first < 0 || last < 0) return;
+    var bacc = panelArr.map(function (p) { return (p.id === "hero" || p.id === "footer") ? "#c8a24a" : (ACCENT[p.getAttribute("data-epoche")] || "#c8a24a"); });
+    var cnt = last - first + 1, s = [bacc[first] + " 0%"];
+    for (var j = first; j <= last; j++) s.push(bacc[j] + " " + (((j - first + 0.5) / cnt) * 100).toFixed(2) + "%");
+    s.push(bacc[last] + " 100%");
+    var beam = el("div", "beam");
+    beam.style.left = (first * 100) + "vw"; beam.style.width = (cnt * 100) + "vw";
+    beam.style.background = "linear-gradient(90deg," + s.join(",") + ")";
+    app.insertBefore(beam, app.children[1] || null);   // direkt über den bgwash
   })();
 
   var target = app.scrollLeft, current = target, animating = false;
@@ -283,7 +302,7 @@
   /* --- Sichtbares aktualisieren (Fortschritt + Parallax) --------------- */
   // Auto-Fit: Text so groß wie möglich, aber nur dort verkleinern, wo ein
   // Block sonst über die Folie hinausliefe (--fs-Multiplikator).
-  var fitBlocks = Array.prototype.slice.call(document.querySelectorAll(".station__inner, .epoch-divider__inner"));
+  var fitBlocks = Array.prototype.slice.call(document.querySelectorAll(".station__inner, .epoch-divider__top, .epoch-divider__bot"));
   function fitOne(inner) {
     inner.style.setProperty("--fs", 1);
     var vh = window.innerHeight, fs = 1, guard = 0;
@@ -302,17 +321,13 @@
   var centers = [];
   function measure() { centers = emblems.map(function (e) { var p = e.parentNode; return p.offsetLeft + p.offsetWidth / 2; }); }
   measure();
+  layoutConnectors();
 
   var ticking = false, lastActive = -1;
   function updateVisual() {
     var mx = maxX(), w = app.clientWidth || 1;
     progress.style.width = (mx > 0 ? app.scrollLeft / mx * 100 : 0) + "%";
-    // fließender Hintergrund: zwischen den beiden nächstliegenden Folien interpolieren
-    var pos = app.scrollLeft / w;
-    var i0 = Math.max(0, Math.min(bgArr.length - 1, Math.floor(pos)));
-    var i1 = Math.min(bgArr.length - 1, i0 + 1), f = Math.max(0, Math.min(1, pos - i0));
-    f = f * f * f * (f * (f * 6 - 15) + 10);   // smootherstep → sanfter Farbverlauf, kein harter Ansatz
-    app.style.background = lerpHex(bgArr[i0], bgArr[i1], f);
+    var pos = app.scrollLeft / w;   // Panel-Position (für aktive Folie)
     // Parallaxe
     var vc = app.scrollLeft + w / 2;
     for (var i = 0; i < emblems.length; i++) {
@@ -327,7 +342,7 @@
     if (!animating) { target = current = app.scrollLeft; }
     if (!ticking) { ticking = true; requestAnimationFrame(function () { updateVisual(); ticking = false; }); }
   }, { passive: true });
-  window.addEventListener("resize", function () { fitAll(); measure(); updateVisual(); });
+  window.addEventListener("resize", function () { fitAll(); measure(); layoutConnectors(); updateVisual(); });
   updateVisual();
 
   /* --- Reveal + aktive Folie (HUD, Knoten, Timeline) ------------------- */

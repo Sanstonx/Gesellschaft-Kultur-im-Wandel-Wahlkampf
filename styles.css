@@ -18,21 +18,28 @@ img { max-width:100%; }
 
 /* ----- Horizontale Spur (frei fließend, kein Snap) --------------------- */
 #app {
+  position:relative;
   height:100vh; height:100dvh; width:100vw;
   display:flex; flex-flow:row nowrap;
   overflow-x:auto; overflow-y:hidden;
   scroll-snap-type:none; scroll-behavior:auto;   /* Bewegung steuert JS */
   scrollbar-width:none;
-  background:#12100c;             /* wird per JS beim Scrollen fließend interpoliert */
+  background:#12100c;
 }
 #app::-webkit-scrollbar { display:none; }
 
+/* durchgehender Farb-Gradient über die ganze Spur */
+.bgwash { position:absolute; left:0; top:0; height:100%; z-index:0; pointer-events:none; }
+/* EIN durchgehender Zeitstrahl (nie unterbrochen) */
+.beam { position:absolute; top:50%; height:3px; transform:translateY(-50%); z-index:1; pointer-events:none;
+  border-radius:3px; box-shadow:0 0 14px rgba(255,255,255,.16); }
+
 .panel {
-  position:relative;
+  position:relative; z-index:2;   /* über bgwash/beam; Inhalt liegt darüber */
   flex:0 0 100vw; width:100vw; height:100vh; height:100dvh;
   overflow:hidden;
-  background:transparent; color:var(--ink,#eee);   /* Hintergrund fließt über #app */
-  contain:paint;                 /* Paint pro Folie isolieren → flüssigeres Scrollen */
+  background:transparent; color:var(--ink,#eee);   /* Hintergrund kommt vom bgwash */
+  contain:paint;
 }
 .hero, .fazit, .footer-panel { display:grid; place-items:center; padding:10vh 8vw; text-align:center; }
 
@@ -66,11 +73,10 @@ img { max-width:100%; }
 .node.is-active::after { animation:pulse 2.2s ease-out infinite; }
 @keyframes pulse { 0%{ transform:scale(1); opacity:.7 } 100%{ transform:scale(3.4); opacity:0 } }
 
-/* Verbindungslinien (Knoten → Infoblock) */
-.conn { position:absolute; z-index:4; background:var(--accent); opacity:.55; }
-.conn-dot { position:absolute; z-index:4; width:7px; height:7px; border-radius:50%;
-  background:var(--accent); transform:translate(-50%,-50%);
-  box-shadow:0 0 10px color-mix(in srgb, var(--accent) 80%, transparent); }
+/* gerade Verbindungslinie (Knoten → Blockkante) */
+.conn2 { position:absolute; height:2px; background:var(--accent); opacity:.42; transform-origin:0 50%; z-index:4; border-radius:2px; }
+.conn2::after { content:""; position:absolute; right:-3px; top:50%; width:7px; height:7px; border-radius:50%;
+  background:var(--accent); transform:translateY(-50%); box-shadow:0 0 9px color-mix(in srgb, var(--accent) 75%, transparent); }
 
 /* =========================================================================
    FORTSCHRITT / HUD / TIMELINE
@@ -111,7 +117,7 @@ img { max-width:100%; }
 /* =========================================================================
    HERO
    ========================================================================= */
-.hero { background:radial-gradient(120% 100% at 12% 50%, #241a10 0%, #12100c 55%, #0a0a0a 100%); color:#f2e8d5; }
+.hero { color:#f2e8d5; }   /* Hintergrund kommt vom durchgehenden Gradient */
 .hero__inner { position:relative; z-index:6; max-width:900px; transform:translateY(-4vh); }
 .hero__kicker { font-family:"Inter",sans-serif; letter-spacing:.42em; text-transform:uppercase; font-size:.8rem; color:#c9b28a; margin-bottom:1.4rem; }
 .hero__title { font-family:"Playfair Display",serif; font-weight:800; font-size:clamp(2.6rem,8vw,6.4rem); line-height:.98; margin:0;
@@ -130,21 +136,19 @@ img { max-width:100%; }
 /* =========================================================================
    EPOCHEN-TRENNER (Kapitelmarke am Strahl)
    ========================================================================= */
-.epoch-divider { display:grid; place-items:center; padding:10vh 8vw; text-align:center; }
-/* weicher Farb-Einlauf von der vorigen Ära am linken (zuerst sichtbaren) Rand */
-.epoch-divider::before { content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
-  background:linear-gradient(90deg, var(--prevbg, transparent) 0%, transparent 45%); opacity:.55; }
 /* großes, blasses Ziffern-Wasserzeichen der Epoche */
 .epoch-divider__wm { position:absolute; inset:0; display:grid; place-items:center; z-index:1; pointer-events:none;
   font-family:var(--font-display); font-weight:800; font-size:min(48vh,26vw); line-height:1; color:var(--accent); opacity:.07; letter-spacing:.04em; }
-.epoch-divider__inner { position:relative; z-index:6; display:grid; justify-items:center; gap:.3rem; text-align:center; width:min(90vw,40rem); --fs:1; }
-.epoch-divider__emblem { width:calc(clamp(72px,11vmin,120px) * var(--fs)); height:calc(clamp(72px,11vmin,120px) * var(--fs)); color:var(--accent); opacity:.95; margin-bottom:.4rem;
+/* Titelseiten-Gruppen ober-/unterhalb des Strahls */
+.epoch-divider__top, .epoch-divider__bot { position:absolute; z-index:6; left:50vw; width:min(90vw,42rem); text-align:center;
+  display:grid; justify-items:center; gap:.28rem; --fs:1; }
+.epoch-divider__emblem { width:calc(clamp(70px,10vmin,112px) * var(--fs)); height:calc(clamp(70px,10vmin,112px) * var(--fs)); color:var(--accent); opacity:.95; margin-bottom:.35rem;
   filter:drop-shadow(0 0 26px color-mix(in srgb, var(--accent) 50%, transparent)); }
 .epoch-divider__emblem svg { width:100%; height:100%; }
 .epoch-divider__num { font-family:"Inter",sans-serif; letter-spacing:.42em; text-transform:uppercase; font-size:calc(.9rem * var(--fs)); color:var(--accent); font-weight:700; }
-.epoch-divider__name { font-family:var(--font-display); font-weight:800; font-size:calc(clamp(2.4rem,7vw,5rem) * var(--fs)); line-height:1.02; margin:.1rem 0; }
+.epoch-divider__name { font-family:var(--font-display); font-weight:800; font-size:calc(clamp(2.2rem,6.4vw,4.6rem) * var(--fs)); line-height:1.02; margin:.1rem 0 0; }
 .epoch-divider__zeit { font-family:"Inter",sans-serif; letter-spacing:.34em; text-transform:uppercase; font-size:calc(.86rem * var(--fs)); color:var(--muted); font-weight:600; }
-.epoch-divider__flair { margin-top:.5rem; font-family:var(--font-body); font-style:italic; color:var(--muted); font-size:calc(1.02rem * var(--fs)); max-width:34ch; }
+.epoch-divider__flair { margin-top:.35rem; font-family:var(--font-body); font-style:italic; color:var(--muted); font-size:calc(1.02rem * var(--fs)); max-width:34ch; }
 
 /* =========================================================================
    STATIONEN (asymmetrisch am Strahl)
@@ -243,7 +247,7 @@ img { max-width:100%; }
 /* =========================================================================
    FAZIT / FOOTER
    ========================================================================= */
-.fazit { background:radial-gradient(120% 100% at 85% 50%, #131a2e 0%, #0d0d12 60%); color:#e9e9ee; text-align:left; }
+.fazit { color:#e9e9ee; text-align:left; }
 .fazit__inner { max-width:840px; width:100%; position:relative; z-index:6; }
 .fazit__kicker { font-family:"Inter",sans-serif; letter-spacing:.35em; text-transform:uppercase; font-size:.78rem; color:#00e5a8; margin-bottom:1rem; }
 .fazit__title { font-family:"Inter",sans-serif; font-weight:800; font-size:clamp(1.7rem,4.6vw,3rem); line-height:1.12; margin:0 0 1.8rem;
@@ -253,7 +257,7 @@ img { max-width:100%; }
 .fazit__item .accent { color:#00e5a8; font-weight:600; }
 .fazit__frage { margin-top:2.4rem; font-family:"Playfair Display",serif; font-style:italic; font-size:clamp(1.5rem,4vw,2.6rem); text-align:center; color:#fff; text-shadow:0 0 30px rgba(29,161,242,.3); }
 
-.footer-panel { background:#0a0a0a; color:#8a8a8a; }
+.footer-panel { color:#8a8a8a; }
 .footer-panel__inner { max-width:620px; font-family:"Inter",sans-serif; font-size:.9rem; line-height:1.7; position:relative; z-index:6; }
 .footer-panel__mark { font-family:"Playfair Display",serif; font-size:2rem; color:#d9a441; margin-bottom:1rem; }
 .footer-panel__note { opacity:.85; }
@@ -268,9 +272,10 @@ img { max-width:100%; }
    ========================================================================= */
 @media (max-width:760px){
   .panel { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:9vh 8vw; overflow-y:auto; }
-  .beam-seg, .node, .conn, .conn-dot { display:none; }
-  .station__inner, .epoch-divider__inner { position:static; width:100%; max-width:52ch; transform:none !important; text-align:left; }
-  .epoch-divider__inner { text-align:center; justify-items:center; }
+  .beam, .node, .conn2 { display:none; }
+  .station__inner, .epoch-divider__top, .epoch-divider__bot { position:static; left:auto; width:100%; max-width:52ch; transform:none !important; text-align:left; }
+  .epoch-divider__top, .epoch-divider__bot { text-align:center; justify-items:center; }
+  .epoch-divider__bot { margin-top:.6rem; }
   .station__inner.al-r { text-align:left; }
   .station__inner.al-r .station__eyebrow { flex-direction:row; }
   .station__photo { position:static; order:-1; width:min(56vw,210px); margin:0 0 1.1rem; transform:none !important; }
